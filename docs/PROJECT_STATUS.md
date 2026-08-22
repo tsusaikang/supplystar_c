@@ -39,6 +39,7 @@
 - 카탈로그 검사: `scripts/validate-catalog.mjs`
 - 화면 테스트: `tests/rendered-html.test.mjs`
 - 구현 복구 지점: Git 커밋 `e1a3af2` (`fix: use Sites-compatible static images`), 핵심 개편 시작점 `9e7f8d8`
+- 원격 반영: GitHub `tsusaikang/supplystar_c`의 `main` 브랜치에 `e88079c`까지 푸시 완료
 
 ## 검증 결과
 
@@ -52,7 +53,6 @@
 
 - 현재 `.openai/hosting.json`의 Sites 프로젝트 ID는 연결된 계정에서 `project not found`로 확인된다. 이 상태로는 Sites 새 버전을 저장하거나 배포할 수 없다.
 - 실제 상품 사진은 아직 제공되지 않아 브랜드 타이포 카드가 표시된다.
-- 기존 GitHub 원격 저장소에는 이번 변경을 푸시하지 않았다.
 - 상품명, 가격, 규격, 회사 연락처는 기존 프로젝트 내용을 유지했으므로 실제 공개 전 사업 담당자의 최종 확인이 필요하다.
 
 ## 다음 단계
@@ -60,7 +60,7 @@
 1. 실제 취급 상품 목록과 사진을 받아 `content/catalog.json`과 `public/products/`를 교체한다.
 2. 상품명·가격·규격·사진과 회사 연락처를 사업 담당자가 확인한다.
 3. 사용할 Sites 프로젝트 또는 새 배포 위치를 확정한다.
-4. 배포 승인 후 검증된 커밋을 원격 저장소에 푸시하고 공개 버전을 생성한다.
+4. 배포 승인 후 검증된 원격 `main`을 기준으로 공개 버전을 생성한다.
 
 ## 중요한 제약과 주의사항
 
