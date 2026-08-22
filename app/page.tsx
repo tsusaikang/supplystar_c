@@ -1,6 +1,14 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import Image from "next/image";
+import { useEffect, useMemo, useState } from "react";
+import {
+  catalog,
+  categoryLabels,
+  formatPrice,
+  type CatalogCategoryId,
+  type CatalogProduct,
+} from "@/lib/catalog";
 
 const heroSlides = [
   { src: "/assets/hero-1.png", alt: "식음료 및 구매대행 정기배송 서비스" },
@@ -8,89 +16,164 @@ const heroSlides = [
   { src: "/assets/hero-3.png", alt: "차량 및 수행기사 서비스" },
 ];
 
-const products = {
-  snack: [
-    ["🍋", "리콜라 레몬민트 허브캔디 (342g × 2개)", "24,700원"],
-    ["🍑", "[Dole] 다이스 복숭아 과일 컵 113g × 16컵", "18,400원"],
-    ["🍫", "로아커 웨하스 미니 믹스 800g (80개입)", "25,500원"],
-    ["🍪", "타타와 초코/애플쿠키 60개입 × 2", "20,000원"],
-    ["🥜", "코어틴 프로틴볼 단백질 초코볼 20g × 20입", "22,200원"],
-  ],
-  drink: [
-    ["🥤", "레드불 에너지 드링크 250ml (24개)", "37,200원"],
-    ["💧", "라인바싸 탄산수 (40개)", "19,500원"],
-    ["⚡", "핫식스 250ml (30캔)", "24,800원"],
-    ["🧃", "덴마크 테이크 얼라이브 120ml (24개)", "12,400원"],
-    ["🥤", "레드불 슈가프리 250ml (24캔)", "35,200원"],
-  ],
-  office: [
-    ["🖊️", "[모나미] 네임펜M 12개입", "12,500원"],
-    ["📁", "[문화산업] 클리어화일 케이스", "1,800원"],
-    ["📎", "[3M] 다용도 테이프 12mm × 20m", "1,900원"],
-    ["✂️", "종이나라 나라풀 8g/15g/25g/35g", "650원"],
-    ["📒", "오피스 데일리 노트 세트", "8,900원"],
-  ],
-  it: [
-    ["💻", "[레노버] Thinkpad T14s Gen4", "견적문의"],
-    ["💻", "[레노버] Thinkbook 15 Gen5", "견적문의"],
-    ["🖥️", "[레노버] Thinkbook 16 Gen6", "견적문의"],
-    ["⌨️", "업무용 주변기기 렌탈 패키지", "견적문의"],
-    ["🖨️", "오피스 복합기 렌탈", "견적문의"],
-  ],
-} as const;
+type SortOption = "featured" | "new" | "price-low" | "price-high";
 
-type ProductKey = keyof typeof products;
+function ProductVisual({ product }: { product: CatalogProduct }) {
+  if (product.image) {
+    return <Image className="product-image" src={product.image} alt={`${product.name} 상품 사진`} width={1200} height={1200} sizes="(max-width: 540px) 50vw, (max-width: 1180px) 33vw, 25vw" />;
+  }
 
-const tabs: { key: ProductKey; label: string }[] = [
-  { key: "snack", label: "간식" },
-  { key: "drink", label: "음료" },
-  { key: "office", label: "사무용품" },
-  { key: "it", label: "IT 장비" },
-];
+  return (
+    <div className="product-fallback" data-tone={product.tone} aria-label={`${product.name} 이미지 준비중`}>
+      <span>{categoryLabels[product.category]}</span>
+      <strong>{product.brand}</strong>
+      <small>SUPPLYSTAR SELECT</small>
+    </div>
+  );
+}
 
-const newProducts = [
-  ["🧄", "티벳 프리미엄 100% 대왕란 통 흑마늘", "31,000원"],
-  ["🥛", "16온스 아이스컵 세트", "20,000원"],
-  ["💙", "[동아오츠카] 포카리스웨트 500ml × 20PET", "26,000원"],
-  ["🍑", "[Dole] 다이스 복숭아 과일 컵 113g × 16컵", "18,400원"],
-  ["🧀", "Sweetory 치즈 쿠키 1.2kg", "24,000원"],
-];
-
-function ProductCard({ item }: { item: readonly [string, string, string] }) {
+function ProductCard({
+  product,
+  inBasket,
+  onSelect,
+  onToggleBasket,
+}: {
+  product: CatalogProduct;
+  inBasket: boolean;
+  onSelect: () => void;
+  onToggleBasket: () => void;
+}) {
   return (
     <article className="product-card">
-      <div className="product-visual" aria-hidden="true">
-        <span>{item[0]}</span>
-        <i>SUPPLYSTAR</i>
+      <button className="product-visual" onClick={onSelect} aria-label={`${product.name} 자세히 보기`}>
+        <ProductVisual product={product} />
+        {product.badge && <span className="product-badge">{product.badge}</span>}
+        <span className="product-quick">상품 보기</span>
+      </button>
+      <div className="product-copy">
+        <p className="product-brand">{product.brand}</p>
+        <button className="product-name" onClick={onSelect}>{product.name}</button>
+        <p className="product-unit">{product.unit}</p>
+        <div className="product-bottom">
+          <strong>{formatPrice(product.price)}</strong>
+          <button
+            className={`basket-add ${inBasket ? "selected" : ""}`}
+            onClick={onToggleBasket}
+            aria-label={inBasket ? `${product.name} 문의목록에서 빼기` : `${product.name} 문의목록에 담기`}
+          >
+            {inBasket ? "✓" : "+"}
+          </button>
+        </div>
       </div>
-      <button className="wish" aria-label={`${item[1]} 관심상품 추가`}>♡</button>
-      <h3>{item[1]}</h3>
-      <p>{item[2]}</p>
     </article>
   );
 }
 
 export default function Home() {
   const [slide, setSlide] = useState(0);
-  const [tab, setTab] = useState<ProductKey>("snack");
+  const [category, setCategory] = useState<CatalogCategoryId>("all");
+  const [query, setQuery] = useState("");
+  const [sort, setSort] = useState<SortOption>("featured");
   const [menuOpen, setMenuOpen] = useState(false);
+  const [basketOpen, setBasketOpen] = useState(false);
+  const [basket, setBasket] = useState<string[]>([]);
+  const [storageReady, setStorageReady] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState<CatalogProduct | null>(null);
+  const [copyStatus, setCopyStatus] = useState("");
 
   useEffect(() => {
     const timer = window.setInterval(
       () => setSlide((current) => (current + 1) % heroSlides.length),
-      6000,
+      6500,
     );
     return () => window.clearInterval(timer);
   }, []);
+
+  useEffect(() => {
+    const frame = window.requestAnimationFrame(() => {
+      try {
+        const saved = window.localStorage.getItem("supplystar-inquiry-list");
+        if (saved) setBasket(JSON.parse(saved));
+      } catch {
+        window.localStorage.removeItem("supplystar-inquiry-list");
+      } finally {
+        setStorageReady(true);
+      }
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, []);
+
+  useEffect(() => {
+    if (storageReady) {
+      window.localStorage.setItem("supplystar-inquiry-list", JSON.stringify(basket));
+    }
+  }, [basket, storageReady]);
+
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setSelectedProduct(null);
+        setBasketOpen(false);
+      }
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, []);
+
+  const filteredProducts = useMemo(() => {
+    const keyword = query.trim().toLocaleLowerCase("ko-KR");
+    const result = catalog.products.filter((product) => {
+      const categoryMatch = category === "all" || product.category === category;
+      const queryMatch = !keyword || [product.name, product.brand, product.description, product.unit]
+        .join(" ")
+        .toLocaleLowerCase("ko-KR")
+        .includes(keyword);
+      return categoryMatch && queryMatch;
+    });
+
+    return [...result].sort((a, b) => {
+      if (sort === "new") return Number(b.isNew) - Number(a.isNew);
+      if (sort === "price-low") return (a.price ?? Number.MAX_SAFE_INTEGER) - (b.price ?? Number.MAX_SAFE_INTEGER);
+      if (sort === "price-high") return (b.price ?? -1) - (a.price ?? -1);
+      return Number(b.featured) - Number(a.featured);
+    });
+  }, [category, query, sort]);
+
+  const basketProducts = basket
+    .map((id) => catalog.products.find((product) => product.id === id))
+    .filter((product): product is CatalogProduct => Boolean(product));
+
+  const toggleBasket = (productId: string) => {
+    setBasket((current) => current.includes(productId)
+      ? current.filter((id) => id !== productId)
+      : [...current, productId]);
+    setCopyStatus("");
+  };
+
+  const copyInquiryList = async () => {
+    const lines = [
+      "[서플라이스타 상품 문의]",
+      ...basketProducts.map((product, index) => `${index + 1}. ${product.name} / ${product.unit} / ${formatPrice(product.price)}`),
+      "",
+      "희망 수량과 납품 일정을 함께 전달해 주세요.",
+    ];
+
+    try {
+      await window.navigator.clipboard.writeText(lines.join("\n"));
+      setCopyStatus("문의 목록을 복사했습니다.");
+    } catch {
+      setCopyStatus("복사할 수 없습니다. 상품명을 직접 전달해 주세요.");
+    }
+  };
 
   return (
     <main>
       <div className="utility-bar">
         <div className="shell utility-inner">
-          <span>기업 맞춤 원스톱 구매 서비스</span>
-          <nav aria-label="회원 메뉴">
-            <a href="#contact">회원가입</a><a href="#contact">로그인</a>
-            <a href="#contact">주문조회</a><a href="#contact">고객센터</a>
+          <span>B2B BUSINESS SUPPLY · 기업 맞춤 상품 카탈로그</span>
+          <nav aria-label="고객 지원 메뉴">
+            <a href="#process">이용안내</a>
+            <a href="#contact">고객센터</a>
           </nav>
         </div>
       </div>
@@ -99,77 +182,210 @@ export default function Home() {
         <div className="shell header-inner">
           <a className="brand" href="#top" aria-label="서플라이스타 홈">
             <span className="brand-mark">★</span>
-            <span><b>SUPPLY</b>STAR<small>한 번에, 필요한 모든 것</small></span>
+            <span className="brand-type"><b>SUPPLY</b>STAR<small>한 번에, 필요한 모든 것</small></span>
           </a>
-          <button className="menu-toggle" onClick={() => setMenuOpen(!menuOpen)} aria-expanded={menuOpen} aria-label="메뉴 열기">☰</button>
+          <button
+            className="menu-toggle"
+            onClick={() => setMenuOpen(!menuOpen)}
+            aria-expanded={menuOpen}
+            aria-label="메뉴 열기"
+          >
+            <i /> <i /> <i />
+          </button>
           <nav className={`main-nav ${menuOpen ? "open" : ""}`} aria-label="주요 메뉴">
-            <a href="#best">제품&amp;서비스</a><a href="#best">IT 장비</a>
-            <a href="#service">자수서비스</a><a href="#service">차량서비스</a>
-            <a href="#best">안전용품</a><a href="#contact">개인결제</a>
-            <a href="#contact">고객센터</a>
+            <a href="#catalog" onClick={() => setMenuOpen(false)}>상품</a>
+            <a href="#service" onClick={() => setMenuOpen(false)}>서비스</a>
+            <a href="#process" onClick={() => setMenuOpen(false)}>구매 안내</a>
+            <a href="#contact" onClick={() => setMenuOpen(false)}>상담 문의</a>
           </nav>
-          <div className="header-tools"><button aria-label="검색">⌕</button><button aria-label="장바구니">▢<sup>0</sup></button></div>
+          <button className="header-search" onClick={() => document.querySelector<HTMLInputElement>("#catalog-search")?.focus()}>
+            <span>상품 검색</span><b>⌕</b>
+          </button>
+          <button className="basket-button" onClick={() => setBasketOpen(true)} aria-label={`문의목록 ${basket.length}개 열기`}>
+            <span>문의목록</span><b>{basket.length}</b>
+          </button>
         </div>
       </header>
 
       <section className="hero" id="top" aria-label="주요 서비스 안내">
         <div className="hero-track" style={{ transform: `translateX(-${slide * 100}%)` }}>
-          {heroSlides.map((item) => <img key={item.src} src={item.src} alt={item.alt} />)}
+          {heroSlides.map((item, index) => <Image key={item.src} src={item.src} alt={item.alt} width={1920} height={760} sizes="100vw" priority={index === 0} />)}
         </div>
-        <button className="hero-arrow prev" onClick={() => setSlide((slide + 2) % 3)} aria-label="이전 배너">‹</button>
-        <button className="hero-arrow next" onClick={() => setSlide((slide + 1) % 3)} aria-label="다음 배너">›</button>
-        <div className="hero-dots">
-          {heroSlides.map((_, i) => <button key={i} className={i === slide ? "active" : ""} onClick={() => setSlide(i)} aria-label={`${i + 1}번 배너`} />)}
+        <button className="hero-arrow prev" onClick={() => setSlide((slide + heroSlides.length - 1) % heroSlides.length)} aria-label="이전 배너">‹</button>
+        <button className="hero-arrow next" onClick={() => setSlide((slide + 1) % heroSlides.length)} aria-label="다음 배너">›</button>
+        <div className="hero-control shell">
+          <strong>0{slide + 1}</strong>
+          <div className="hero-dots">
+            {heroSlides.map((_, index) => (
+              <button key={index} className={index === slide ? "active" : ""} onClick={() => setSlide(index)} aria-label={`${index + 1}번 배너`} />
+            ))}
+          </div>
+          <span>0{heroSlides.length}</span>
         </div>
       </section>
 
-      <section className="section shell" id="best">
-        <div className="section-heading"><span>Best Item</span><h2>서플라이스타의 베스트 아이템</h2></div>
-        <div className="tabs" role="tablist">
-          {tabs.map((item) => <button key={item.key} className={tab === item.key ? "active" : ""} onClick={() => setTab(item.key)} role="tab" aria-selected={tab === item.key}>{item.label}</button>)}
+      <section className="promise-bar" aria-label="서플라이스타 이용 장점">
+        <div className="shell promise-grid">
+          <div><b>01</b><p><strong>기업 맞춤 견적</strong><span>수량과 조건에 맞춘 제안</span></p></div>
+          <div><b>02</b><p><strong>정기·일괄 납품</strong><span>반복 구매를 더 간편하게</span></p></div>
+          <div><b>03</b><p><strong>세금계산서 지원</strong><span>기업 구매에 맞춘 정산</span></p></div>
+          <div><b>04</b><p><strong>전담 상담</strong><span>상품부터 배송까지 한 번에</span></p></div>
         </div>
-        <div className="product-grid">{products[tab].map((item) => <ProductCard key={item[1]} item={item} />)}</div>
+      </section>
+
+      <section className="catalog-section shell" id="catalog">
+        <div className="section-intro catalog-intro">
+          <div><span>PRODUCT CATALOG</span><h1>업무에 필요한 상품을<br />한곳에서 확인하세요.</h1></div>
+          <p>온라인 결제 없이도 쇼핑몰처럼 상품을 둘러보고 문의목록에 담을 수 있습니다.<br />희망 수량과 일정은 담당자 상담 후 최종 견적으로 안내합니다.</p>
+        </div>
+
+        <div className="catalog-tools">
+          <div className="category-tabs" role="tablist" aria-label="상품 분류">
+            {catalog.categories.map((item) => (
+              <button
+                key={item.id}
+                className={category === item.id ? "active" : ""}
+                onClick={() => setCategory(item.id)}
+                role="tab"
+                aria-selected={category === item.id}
+              >
+                {item.label}
+              </button>
+            ))}
+          </div>
+          <div className="catalog-actions">
+            <label className="catalog-search" htmlFor="catalog-search">
+              <span>⌕</span>
+              <input id="catalog-search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="상품명 또는 브랜드 검색" />
+            </label>
+            <label className="sort-select">
+              <span className="sr-only">정렬 방식</span>
+              <select value={sort} onChange={(event) => setSort(event.target.value as SortOption)}>
+                <option value="featured">추천순</option>
+                <option value="new">신상품순</option>
+                <option value="price-low">낮은 가격순</option>
+                <option value="price-high">높은 가격순</option>
+              </select>
+            </label>
+          </div>
+        </div>
+
+        <div className="catalog-result"><b>{filteredProducts.length}</b>개의 상품</div>
+        {filteredProducts.length > 0 ? (
+          <div className="product-grid">
+            {filteredProducts.map((product) => (
+              <ProductCard
+                key={product.id}
+                product={product}
+                inBasket={basket.includes(product.id)}
+                onSelect={() => setSelectedProduct(product)}
+                onToggleBasket={() => toggleBasket(product.id)}
+              />
+            ))}
+          </div>
+        ) : (
+          <div className="empty-result"><strong>검색 결과가 없습니다.</strong><p>다른 상품명이나 브랜드로 검색해 보세요.</p></div>
+        )}
+        <p className="catalog-note">{catalog.taxNote}</p>
       </section>
 
       <section className="service-section" id="service">
         <div className="shell">
-          <div className="section-heading light"><span>Our Service</span><h2>서플라이스타만의 맞춤 서비스를 경험해보세요</h2></div>
+          <div className="section-intro service-intro">
+            <div><span>OUR SERVICE</span><h2>구매 업무의 번거로움까지<br />함께 줄여드립니다.</h2></div>
+            <p>단순 상품 공급을 넘어 기업 운영에 필요한 조달과 서비스를<br />한 담당자를 통해 유연하게 연결합니다.</p>
+          </div>
           <div className="service-grid">
-            <a className="service-card snacks" href="#contact"><small>01</small><h3>직원들을 위한<br />간식복지</h3><span>자세히 살펴보기 →</span></a>
-            <a className="service-card rentals" href="#contact"><small>02</small><h3>IT 장비<br />렌탈 서비스</h3><span>자세히 살펴보기 →</span></a>
-            <a className="service-card uniforms" href="#contact"><small>03</small><h3>판촉물 · 단체 유니폼<br />맞춤제작</h3><span>자세히 살펴보기 →</span></a>
-            <a className="service-card drivers" href="#contact"><small>04</small><h3>언제 어디든지<br />차량서비스</h3><span>자세히 살펴보기 →</span></a>
+            <article className="service-card image-card snacks"><small>01</small><div><h3>오피스 간식<br />정기배송</h3><p>인원과 예산에 맞춘 구성부터 정기 보충까지</p></div></article>
+            <article className="service-card image-card rentals"><small>02</small><div><h3>IT 장비<br />기업 렌탈</h3><p>도입 수량과 기간에 맞춘 월 단위 렌탈</p></div></article>
+            <article className="service-card graphic-card"><small>03</small><div className="service-symbol">SS</div><div><h3>판촉물 · 유니폼<br />맞춤 제작</h3><p>목적과 수량을 반영한 제작 상담</p></div></article>
+            <article className="service-card image-card drivers"><small>04</small><div><h3>차량 · 수행기사<br />비즈니스 지원</h3><p>중요한 일정에 맞춘 유연한 차량 서비스</p></div></article>
           </div>
         </div>
       </section>
 
-      <section className="shipping">
-        <div className="shell shipping-inner"><div className="shipping-icon">▣</div><div><span>배송 안내</span><p>주문하신 상품은 보통 익일 출고되며 물류와 택배사 상황에 따라 영업일 기준 1~4일가량 소요될 수 있습니다.</p><p>여러 상품 주문 시 재고 준비 상황에 따라 개별 배송될 수 있습니다.</p></div><a href="#contact">더보기 +</a></div>
+      <section className="process-section shell" id="process">
+        <div className="section-intro">
+          <div><span>HOW IT WORKS</span><h2>상품 선택부터 납품까지<br />간단한 네 단계</h2></div>
+          <p>웹사이트에서는 상품을 고르고, 실제 거래 조건은 담당자가 확인합니다.<br />온라인 결제 없이 기업별 구매 절차에 맞춰 진행합니다.</p>
+        </div>
+        <ol className="process-list">
+          <li><b>01</b><strong>상품 둘러보기</strong><span>분류와 검색으로 필요한 상품을 찾습니다.</span></li>
+          <li><b>02</b><strong>문의목록 담기</strong><span>관심 상품을 장바구니처럼 한곳에 모읍니다.</span></li>
+          <li><b>03</b><strong>조건 상담</strong><span>수량, 일정, 정산 조건을 담당자와 확인합니다.</span></li>
+          <li><b>04</b><strong>계약 및 납품</strong><span>확정 견적에 따라 오프라인 거래로 진행합니다.</span></li>
+        </ol>
       </section>
 
-      <section className="section shell">
-        <div className="section-heading"><span>New Product</span><h2>서플라이스타의 신상품들을 만나보세요!</h2></div>
-        <div className="product-grid">{newProducts.map((item) => <ProductCard key={item[1]} item={item} />)}</div>
-      </section>
-
-      <section className="weekly">
-        <div className="shell weekly-inner">
-          <div><span>Weekly Highlight</span><h2>이번 주 핫하게<br />뜨고 있는 제품</h2><p>업무 공간에 필요한 인기 품목을<br />합리적인 구성으로 만나보세요.</p><a href="#best">제품 둘러보기 →</a></div>
-          <div className="weekly-boxes"><div>OFFICE<br /><b>SNACK</b></div><div>SMART<br /><b>RENTAL</b></div><div>BUSINESS<br /><b>CARE</b></div></div>
+      <section className="contact-section" id="contact">
+        <div className="shell contact-inner">
+          <div><span>BUSINESS INQUIRY</span><h2>필요한 상품과 조건을<br />편하게 알려주세요.</h2></div>
+          <div className="contact-card">
+            <p>기업 구매 · 정기배송 · 렌탈 상담</p>
+            <a className="phone-link" href="tel:02-6925-1054">02-6925-1054</a>
+            <a className="mail-link" href="mailto:supplystar@supplystar.co.kr">supplystar@supplystar.co.kr ↗</a>
+            <small>평일 09:00–18:00 · 점심 12:00–13:00</small>
+          </div>
         </div>
       </section>
 
-      <section className="notice shell"><strong>SupplyStar</strong><p>전 제품은 부가세 포함 가격입니다. 상품의 가격 및 사양은 제조사의 사정에 따라 달라질 수 있습니다.</p></section>
-
-      <footer id="contact">
-        <div className="shell footer-grid">
-          <div className="footer-brand"><span>★</span><b>SUPPLYSTAR</b><p>기업 운영에 필요한 상품과 서비스를<br />한 번에 연결합니다.</p></div>
-          <div><h3>고객센터</h3><strong>02-6925-1054</strong><p>평일 09:00–18:00<br />점심 12:00–13:00<br />주말·공휴일 휴무</p></div>
-          <div><h3>회사정보</h3><p>상호명 (주)서플라이스타<br />대표자 김진솔<br />서울특별시 영등포구 국회대로 800<br />이메일 supplystar@supplystar.co.kr</p></div>
-          <div><h3>바로가기</h3><p><a href="#best">제품&amp;서비스</a><br /><a href="#service">맞춤 서비스</a><br /><a href="#contact">이용안내</a><br /><a href="#contact">개인정보처리방침</a></p></div>
+      <footer>
+        <div className="shell footer-main">
+          <div className="footer-brand">
+            <span className="brand-mark">★</span><b>SUPPLYSTAR</b>
+            <p>기업 운영에 필요한 상품과 서비스를<br />한 번에 연결합니다.</p>
+          </div>
+          <div><h3>회사정보</h3><p>상호명 (주)서플라이스타<br />대표자 김진솔<br />서울특별시 영등포구 국회대로 800</p></div>
+          <div><h3>고객지원</h3><p><a href="tel:02-6925-1054">02-6925-1054</a><br /><a href="mailto:supplystar@supplystar.co.kr">supplystar@supplystar.co.kr</a><br />평일 09:00–18:00</p></div>
+          <div><h3>안내</h3><p><a href="#catalog">상품 카탈로그</a><br /><a href="#process">구매 절차</a><br /><a href="#contact">상담 문의</a></p></div>
         </div>
-        <div className="copyright shell">COPYRIGHT © SUPPLYSTAR. ALL RIGHTS RESERVED.</div>
+        <div className="shell footer-bottom"><span>COPYRIGHT © SUPPLYSTAR. ALL RIGHTS RESERVED.</span><span>온라인 카탈로그 · 오프라인 계약 및 납품</span></div>
       </footer>
+
+      <button className="floating-basket" onClick={() => setBasketOpen(true)} aria-label={`문의목록 ${basket.length}개 열기`}>
+        <span>문의목록</span><b>{basket.length}</b>
+      </button>
+
+      <div className={`drawer-backdrop ${basketOpen ? "show" : ""}`} onClick={() => setBasketOpen(false)} />
+      <aside className={`basket-drawer ${basketOpen ? "open" : ""}`} aria-hidden={!basketOpen} aria-label="상품 문의목록">
+        <div className="drawer-head"><div><span>INQUIRY LIST</span><h2>문의목록 <b>{basket.length}</b></h2></div><button onClick={() => setBasketOpen(false)} aria-label="문의목록 닫기">×</button></div>
+        <p className="drawer-guide">장바구니처럼 상품을 모은 뒤 목록을 복사해 담당자에게 전달할 수 있습니다.</p>
+        <div className="drawer-products">
+          {basketProducts.length > 0 ? basketProducts.map((product) => (
+            <article key={product.id}>
+              <div className="drawer-thumb"><ProductVisual product={product} /></div>
+              <div><strong>{product.name}</strong><span>{product.unit}</span><b>{formatPrice(product.price)}</b></div>
+              <button onClick={() => toggleBasket(product.id)} aria-label={`${product.name} 삭제`}>×</button>
+            </article>
+          )) : <div className="drawer-empty"><strong>아직 담은 상품이 없습니다.</strong><span>카탈로그에서 관심 상품의 + 버튼을 눌러보세요.</span></div>}
+        </div>
+        <div className="drawer-footer">
+          <div><span>선택 상품</span><strong>{basket.length}개</strong></div>
+          <button className="primary-button" onClick={copyInquiryList} disabled={basket.length === 0}>문의 목록 복사</button>
+          {copyStatus && <p role="status">{copyStatus}</p>}
+          <a href="mailto:supplystar@supplystar.co.kr">이메일 상담하기</a>
+        </div>
+      </aside>
+
+      {selectedProduct && (
+        <div className="modal-backdrop" role="presentation" onClick={() => setSelectedProduct(null)}>
+          <section className="product-modal" role="dialog" aria-modal="true" aria-labelledby="product-modal-title" onClick={(event) => event.stopPropagation()}>
+            <button className="modal-close" onClick={() => setSelectedProduct(null)} aria-label="상품 상세 닫기">×</button>
+            <div className="modal-visual"><ProductVisual product={selectedProduct} /></div>
+            <div className="modal-copy">
+              <span>{selectedProduct.brand}</span>
+              <h2 id="product-modal-title">{selectedProduct.name}</h2>
+              <p className="modal-unit">{selectedProduct.unit}</p>
+              <strong className="modal-price">{formatPrice(selectedProduct.price)}</strong>
+              <p className="modal-description">{selectedProduct.description}</p>
+              <dl><div><dt>거래 방식</dt><dd>담당자 견적 후 오프라인 계약</dd></div><div><dt>배송 안내</dt><dd>수량·재고·납품지 확인 후 안내</dd></div></dl>
+              <button className="primary-button" onClick={() => toggleBasket(selectedProduct.id)}>
+                {basket.includes(selectedProduct.id) ? "문의목록에서 빼기" : "문의목록에 담기"}
+              </button>
+            </div>
+          </section>
+        </div>
+      )}
     </main>
   );
 }

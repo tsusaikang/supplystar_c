@@ -1,98 +1,38 @@
-# vinext-starter
+# SUPPLYSTAR 온라인 카탈로그
 
-A clean full-stack starter running on
-[vinext](https://github.com/cloudflare/vinext), with optional Cloudflare D1 and
-Drizzle support.
+서플라이스타가 취급하는 상품과 기업 대상 서비스를 보여주는 온라인 카탈로그입니다. 일반 쇼핑몰처럼 상품을 검색하고 문의목록에 담을 수 있지만, 웹사이트에서 결제하거나 주문을 확정하지는 않습니다. 실제 거래는 담당자 상담, 견적 확인, 오프라인 계약 및 납품 순서로 진행합니다.
 
-## Prerequisites
+## 상품 관리
 
-- Node.js `>=22.13.0`
+- 상품명, 가격, 분류, 설명: `content/catalog.json`
+- 실제 상품 사진: `public/products/`
+- 자세한 교체 방법: `docs/상품_교체_가이드.md`
 
-## Quick Start
+상품 사진이 없으면 브랜드 타이포 카드가 표시됩니다. 사진 파일을 추가하고 카탈로그의 `image` 경로만 바꾸면 사진형 상품 카드로 자동 전환됩니다.
+
+## 화면 기능
+
+- 상품 분류, 검색, 가격 정렬
+- 상품 상세 보기
+- 브라우저에 저장되는 문의목록
+- 문의목록 텍스트 복사
+- 오피스 간식, IT 렌탈, 맞춤 제작, 차량 서비스 안내
+- 모바일 반응형 화면
+
+## 확인
+
+```bash
+npm run validate:catalog
+npm test
+```
+
+`validate:catalog`는 중복 상품 ID, 잘못된 분류, 가격 형식, 누락된 이미지 파일을 확인합니다. `npm test`는 카탈로그 검증과 배포용 빌드, 주요 화면 내용 검사를 함께 수행합니다.
+
+## 개발
 
 ```bash
 npm install
 npm run dev
-npm run build
 ```
 
-This starter does not use `wrangler.jsonc`.
-
-## Included Shape
-
-- edit site code under `app/`
-- `.openai/hosting.json` declares optional Sites D1 and R2 bindings
-- `vite.config.ts` simulates declared bindings for local development
-- `db/schema.ts` starts intentionally empty
-- `examples/d1/` contains an optional D1 example surface
-- `drizzle.config.ts` supports local migration generation when needed
-
-## Workspace Auth Headers
-
-OpenAI workspace sites can read the current user's email from
-`oai-authenticated-user-email`.
-
-SIWC-authenticated workspace sites may also receive
-`oai-authenticated-user-full-name` when the user's SIWC profile has a non-empty
-`name` claim. The full-name value is percent-encoded UTF-8 and is accompanied by
-`oai-authenticated-user-full-name-encoding: percent-encoded-utf-8`.
-
-Treat the full name as optional and fall back to email when it is absent:
-
-```tsx
-import { headers } from "next/headers";
-
-export default async function Home() {
-  const requestHeaders = await headers();
-  const email = requestHeaders.get("oai-authenticated-user-email");
-  const encodedFullName = requestHeaders.get("oai-authenticated-user-full-name");
-  const fullName =
-    encodedFullName &&
-    requestHeaders.get("oai-authenticated-user-full-name-encoding") ===
-      "percent-encoded-utf-8"
-      ? decodeURIComponent(encodedFullName)
-      : null;
-
-  const displayName = fullName ?? email;
-  // ...
-}
-```
-
-## Optional Dispatch-Owned ChatGPT Sign-In
-
-Import the ready-to-use helpers from `app/chatgpt-auth.ts` when the site needs
-optional or required ChatGPT sign-in:
-
-- Use `getChatGPTUser()` for optional signed-in UI.
-- Use `requireChatGPTUser(returnTo)` for server-rendered pages that should send
-  anonymous visitors through Sign in with ChatGPT.
-- Use `chatGPTSignInPath(returnTo)` and `chatGPTSignOutPath(returnTo)` for
-  browser links or actions.
-- Pass a same-origin relative `returnTo` path for the destination after sign-in
-  or sign-out. The helper validates and safely encodes it.
-- Mark protected pages with `export const dynamic = "force-dynamic"` because
-  they depend on per-request identity headers.
-
-Dispatch owns `/signin-with-chatgpt`, `/signout-with-chatgpt`, `/callback`, the
-OAuth cookies, and identity header injection. Do not implement app routes for
-those reserved paths. Routes that do not import and call the helper remain
-anonymous-compatible.
-
-SIWC establishes identity only; it does not prove workspace membership. Use the
-Sites hosting platform's access policy controls for workspace-wide restrictions,
-or enforce explicit server-side membership or allowlist checks.
-
-Use SIWC for account pages, user-specific dashboards, saved records, and write
-actions tied to the current ChatGPT user. Leave public content anonymous.
-
-## Useful Commands
-
-- `npm run dev`: start local development
-- `npm run build`: verify the vinext build output
-- `npm test`: build the starter and verify its rendered loading skeleton
-- `npm run db:generate`: generate Drizzle migrations after schema changes
-
-## Learn More
-
-- [vinext Documentation](https://github.com/cloudflare/vinext)
-- [Drizzle D1 Guide](https://orm.drizzle.team/docs/get-started/d1-new)
+이 프로젝트는 vinext와 OpenAI Sites/Cloudflare 호환 구조를 사용합니다.
