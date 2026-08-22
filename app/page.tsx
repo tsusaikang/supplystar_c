@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import { useEffect, useMemo, useState } from "react";
 import {
   catalog,
@@ -20,7 +19,9 @@ type SortOption = "featured" | "new" | "price-low" | "price-high";
 
 function ProductVisual({ product }: { product: CatalogProduct }) {
   if (product.image) {
-    return <Image className="product-image" src={product.image} alt={`${product.name} 상품 사진`} width={1200} height={1200} sizes="(max-width: 540px) 50vw, (max-width: 1180px) 33vw, 25vw" />;
+    // vinext의 현재 이미지 최적화 경로 대신 Sites 정적 자산을 직접 사용합니다.
+    // eslint-disable-next-line @next/next/no-img-element
+    return <img className="product-image" src={product.image} alt={`${product.name} 상품 사진`} />;
   }
 
   return (
@@ -209,7 +210,11 @@ export default function Home() {
 
       <section className="hero" id="top" aria-label="주요 서비스 안내">
         <div className="hero-track" style={{ transform: `translateX(-${slide * 100}%)` }}>
-          {heroSlides.map((item, index) => <Image key={item.src} src={item.src} alt={item.alt} width={1920} height={760} sizes="100vw" priority={index === 0} />)}
+          {heroSlides.map((item) => (
+            // vinext의 현재 이미지 최적화 경로 대신 Sites 정적 자산을 직접 사용합니다.
+            // eslint-disable-next-line @next/next/no-img-element
+            <img key={item.src} src={item.src} alt={item.alt} />
+          ))}
         </div>
         <button className="hero-arrow prev" onClick={() => setSlide((slide + heroSlides.length - 1) % heroSlides.length)} aria-label="이전 배너">‹</button>
         <button className="hero-arrow next" onClick={() => setSlide((slide + 1) % heroSlides.length)} aria-label="다음 배너">›</button>
