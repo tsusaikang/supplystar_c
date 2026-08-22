@@ -38,7 +38,7 @@
 - 소셜 미리보기: `public/og.png`
 - 카탈로그 검사: `scripts/validate-catalog.mjs`
 - 화면 테스트: `tests/rendered-html.test.mjs`
-- 구현 복구 지점: Git 커밋 `9e7f8d8` (`feat: rebuild SupplyStar product catalog`)
+- 구현 복구 지점: Git 커밋 `e1a3af2` (`fix: use Sites-compatible static images`), 핵심 개편 시작점 `9e7f8d8`
 
 ## 검증 결과
 
